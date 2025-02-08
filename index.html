@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horarios Estación Burgos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="bg-blue-500 text-white p-4 text-center text-2xl font-bold">
+        Horarios Estación Burgos
+    </div>
+    <div class="p-4 flex gap-2">
+        <button id="llegadasBtn" class="bg-blue-500 text-white px-4 py-2 rounded">Llegadas</button>
+        <button id="salidasBtn" class="bg-blue-500 text-white px-4 py-2 rounded">Salidas</button>
+    </div>
+    <div class="p-4">
+        <table class="min-w-full bg-white border border-gray-300">
+            <thead>
+                <tr class="bg-gray-200">
+                    <th class="border px-4 py-2">Empresa</th>
+                    <th class="border px-4 py-2">Hora</th>
+                    <th class="border px-4 py-2" id="origenDestino">Origen</th>
+                    <th class="border px-4 py-2">Dársena</th>
+                    <th class="border px-4 py-2">Observaciones</th>
+                    <th class="border px-4 py-2">Itinerario</th>
+                </tr>
+            </thead>
+            <tbody id="tablaBody">
+                <!-- Datos se insertarán aquí -->
+            </tbody>
+        </table>
+    </div>
+    <script>
+        const urlLlegadas = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRLJmk2COJIQ9tJ3UP0lfgqNaBA_bOJu3SwkEy5tBuL_7Xy1OSHO7t8Q9sUAN5b-NCpDu9sMu6hz8kU/pub?gid=0&single=true&output=csv";
+        const urlSalidas = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRLJmk2COJIQ9tJ3UP0lfgqNaBA_bOJu3SwkEy5tBuL_7Xy1OSHO7t8Q9sUAN5b-NCpDu9sMu6hz8kU/pub?gid=1924431758&single=true&output=csv";
+        let modo = "llegadas";
+
+        document.getElementById("llegadasBtn").addEventListener("click", () => {
+            modo = "llegadas";
+            document.getElementById("origenDestino").innerText = "Origen";
+            cargarDatos(urlLlegadas);
+        });
+
+        document.getElementById("salidasBtn").addEventListener("click", () => {
+            modo = "salidas";
+            document.getElementById("origenDestino").innerText = "Destino";
+            cargarDatos(urlSalidas);
+        });
+
+        async function cargarDatos(url) {
+            try {
+                const response = await fetch(url);
+                const data = await response.text();
+                console.log("Datos recibidos:", data);
+                const rows = data.split("\n").slice(1);
+                let tablaHTML = "";
+                rows.forEach(row => {
+                    const cols = row.split(",").map(col => col.trim());
+                    if (cols.length >= 6) {
+                        tablaHTML += `
+                            <tr>
+                                <td class="border px-4 py-2">${cols[0]}</td>
+                                <td class="border px-4 py-2">${cols[1]}</td>
+                                <td class="border px-4 py-2">${cols[2]}</td>
+                                <td class="border px-4 py-2">${cols[3]}</td>
+                                <td class="border px-4 py-2">${cols[4]}</td>
+                                <td class="border px-4 py-2">${cols[5]}</td>
+                            </tr>
+                        `;
+                    }
+                });
+                document.getElementById("tablaBody").innerHTML = tablaHTML;
+            } catch (error) {
+                console.error("Error al cargar los datos:", error);
+            }
+        }
+
+        cargarDatos(urlLlegadas);
+    </script>
+</body>
+</html>
