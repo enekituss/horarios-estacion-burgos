@@ -4,8 +4,100 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tacógrafo Digital</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            height: 100vh;
+            margin-top: 30px;
+        }
+
+        #container {
+            width: 100%;
+            max-width: 800px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        header {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2em;
+            color: #333;
+        }
+
+        h2 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        #conduccion, #descanso {
+            margin-bottom: 30px;
+            width: 100%;
+        }
+
+        p {
+            font-size: 1.2em;
+            color: #333;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+
+        button {
+            width: 30%;
+            padding: 12px;
+            font-size: 1em;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #mapa {
+            width: 100%;
+            height: 300px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 600px) {
+            #container {
+                width: 100%;
+                padding: 10px;
+            }
+
+            button {
+                width: 45%;
+            }
+        }
+    </style>
 </head>
 <body>
     <div id="container">
@@ -39,6 +131,118 @@
         <div id="mapa"></div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        let tiempoConduccion = 0; 
+        let tiempoDescanso = 0; 
+        let tiempoRestanteConduccion = 14400; 
+        let conduccionInterval, descansoInterval;
+        let conduccionEnCurso = false;
+        let descansoEnCurso = false;
+
+        function actualizarTiempo() {
+            let horasConduccion = Math.floor(tiempoConduccion / 3600);
+            let minutosConduccion = Math.floor((tiempoConduccion % 3600) / 60);
+            let segundosConduccion = tiempoConduccion % 60;
+
+            let horasRestantes = Math.floor(tiempoRestanteConduccion / 3600);
+            let minutosRestantes = Math.floor((tiempoRestanteConduccion % 3600) / 60);
+            let segundosRestantes = tiempoRestanteConduccion % 60;
+
+            document.getElementById("tiempoConduccion").innerText = 
+                `${String(horasConduccion).padStart(2, '0')}:${String(minutosConduccion).padStart(2, '0')}:${String(segundosConduccion).padStart(2, '0')}`;
+            document.getElementById("tiempoRestante").innerText = 
+                `${String(horasRestantes).padStart(2, '0')}:${String(minutosRestantes).padStart(2, '0')}:${String(segundosRestantes).padStart(2, '0')}`;
+        }
+
+        function iniciarConduccion() {
+            if (conduccionEnCurso) {
+                clearInterval(conduccionInterval);
+                document.getElementById("startStopBtnConduccion").innerText = "Iniciar";
+            } else {
+                conduccionInterval = setInterval(function() {
+                    tiempoConduccion++;
+                    tiempoRestanteConduccion--;
+                    actualizarTiempo();
+                    if (tiempoRestanteConduccion <= 0) {
+                        clearInterval(conduccionInterval);
+                    }
+                }, 1000);
+                document.getElementById("startStopBtnConduccion").innerText = "Pausar";
+            }
+            conduccionEnCurso = !conduccionEnCurso;
+        }
+
+        function pausarConduccion() {
+            clearInterval(conduccionInterval);
+            document.getElementById("startStopBtnConduccion").innerText = "Reanudar";
+            conduccionEnCurso = false;
+        }
+
+        function resetConduccion() {
+            clearInterval(conduccionInterval);
+            tiempoConduccion = 0;
+            tiempoRestanteConduccion = 14400;
+            actualizarTiempo();
+            document.getElementById("startStopBtnConduccion").innerText = "Iniciar";
+            conduccionEnCurso = false;
+        }
+
+        function iniciarDescanso() {
+            if (descansoEnCurso) {
+                clearInterval(descansoInterval);
+                document.getElementById("startStopBtnDescanso").innerText = "Iniciar";
+            } else {
+                descansoInterval = setInterval(function() {
+                    tiempoDescanso++;
+                    document.getElementById("tiempoDescanso").innerText = 
+                        `${String(Math.floor(tiempoDescanso / 3600)).padStart(2, '0')}:${String(Math.floor((tiempoDescanso % 3600) / 60)).padStart(2, '0')}:${String(tiempoDescanso % 60).padStart(2, '0')}`;
+                }, 1000);
+                document.getElementById("startStopBtnDescanso").innerText = "Pausar";
+            }
+            descansoEnCurso = !descansoEnCurso;
+        }
+
+        function pausarDescanso() {
+            clearInterval(descansoInterval);
+            document.getElementById("startStopBtnDescanso").innerText = "Reanudar";
+            descansoEnCurso = false;
+        }
+
+        function resetDescanso() {
+            clearInterval(descansoInterval);
+            tiempoDescanso = 0;
+            document.getElementById("tiempoDescanso").innerText = "00:00:00";
+            document.getElementById("startStopBtnDescanso").innerText = "Iniciar";
+            descansoEnCurso = false;
+        }
+
+        document.getElementById("startStopBtnConduccion").addEventListener("click", iniciarConduccion);
+        document.getElementById("pauseStopBtnConduccion").addEventListener("click", pausarConduccion);
+        document.getElementById("resetStopBtnConduccion").addEventListener("click", resetConduccion);
+
+        document.getElementById("startStopBtnDescanso").addEventListener("click", iniciarDescanso);
+        document.getElementById("pauseStopBtnDescanso").addEventListener("click", pausarDescanso);
+        document.getElementById("resetStopBtnDescanso").addEventListener("click", resetDescanso);
+
+        // Inicialización del mapa
+        let map = L.map('mapa').setView([51.505, -0.09], 13); 
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                let lat = position.coords.latitude;
+                let lon = position.coords.longitude;
+
+                map.setView([lat, lon], 13);
+                L.marker([lat, lon]).addTo(map)
+                    .bindPopup("Estás aquí")
+                    .openPopup();
+            });
+        }
+    </script>
 </body>
 </html>
